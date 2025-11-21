@@ -233,7 +233,6 @@ requires-dist = [
     { name = "django", specifier = ">=3.2" },
     { name = "requests", specifier = ">=2.25.0" },
 ]
-provides-extras = ["test"]
 
 [[package]]
 name = "idna"

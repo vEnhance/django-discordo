@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build"]
+build-backend = "uv_build"
 
 [project]
 name = "django-discordo"
@@ -43,15 +43,3 @@ dependencies = [
 Homepage = "https://github.com/vEnhance/django-discordo"
 Repository = "https://github.com/vEnhance/django-discordo"
 Issues = "https://github.com/vEnhance/django-discordo/issues"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/django_discordo"]
-
-[tool.hatch.version]
-path = "src/django_discordo/__init__.py"
-
-[tool.hatch.envs.test]
-dependencies = []
-
-[tool.hatch.envs.test.scripts]
-run = "python -m unittest django_discordo.tests"
