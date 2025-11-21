@@ -49,3 +49,9 @@ packages = ["src/django_discordo"]
 
 [tool.hatch.version]
 path = "src/django_discordo/__init__.py"
+
+[tool.hatch.envs.test]
+dependencies = []
+
+[tool.hatch.envs.test.scripts]
+run = "python -m unittest django_discordo.tests"
