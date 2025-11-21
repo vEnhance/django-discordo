@@ -6,6 +6,7 @@ build-backend = "uv_build"
 name = "django-discordo"
 version = "0.1.0"
 description = "Discord webhook handler for Django logging"
+repository = "https://github.com/vEnhance/django-discordo"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
