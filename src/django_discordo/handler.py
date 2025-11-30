@@ -170,8 +170,8 @@ class DiscordWebhookHandler(logging.Handler):
         1. settings.DISCORD_WEBHOOK_URLS[level]
         2. settings.DISCORD_WEBHOOK_URLS['DEFAULT']
         3. settings.DISCORD_WEBHOOK_URL
-        4. Environment variable WEBHOOK_URL_{LEVEL}
-        5. Environment variable WEBHOOK_URL
+        4. Environment variable DISCORD_WEBHOOK_URL_{LEVEL}
+        5. Environment variable DISCORD_WEBHOOK_URL
         """
         try:
             from django.conf import settings
@@ -195,7 +195,8 @@ class DiscordWebhookHandler(logging.Handler):
 
         # Fall back to environment variables
         return os.getenv(
-            f"WEBHOOK_URL_{record.levelname.upper()}", os.getenv("WEBHOOK_URL")
+            f"DISCORD_WEBHOOK_URL_{record.levelname.upper()}",
+            os.getenv("DISCORD_WEBHOOK_URL"),
         )
 
     def post_response(self, record: logging.LogRecord) -> Optional[requests.Response]:

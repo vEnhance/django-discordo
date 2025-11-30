@@ -60,9 +60,9 @@ check environment variables instead:
 
 ```bash
 # In your .env file
-WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 # Or level-specific
-WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/YOUR_ERROR_WEBHOOK_URL
+DISCORD_WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/YOUR_ERROR_WEBHOOK_URL
 ```
 
 ### 3. Update Django Settings
