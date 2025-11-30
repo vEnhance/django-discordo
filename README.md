@@ -30,6 +30,10 @@ uv add django-discordo
 
 ### 2. Configure Webhook URL
 
+There are two possible ways to do this (first one takes precedence):
+
+#### Use settings.py
+
 Add your webhook URL to your Django `settings.py`:
 
 ```python
@@ -45,8 +49,14 @@ DISCORD_WEBHOOK_URLS = {
 }
 ```
 
-**Alternative**: You can also use environment variables
-(the handler will check settings first, then fall back to environment variables):
+(Webhook URL's are considered secrets,
+so you probably don't want to actually hardcode the URL's into `settings.py`
+if your source code is public.)
+
+#### Using environment variables directly
+
+If the URL's are not configured in `settings.py` then `django-discordo` will
+check environment variables instead:
 
 ```bash
 # In your .env file
@@ -57,13 +67,10 @@ WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/YOUR_ERROR_WEBHOOK_URL
 
 ### 3. Update Django Settings
 
-Add the Discord handler to your Django `settings.py`:
+Add the Discord handler to your Django `settings.py`, e.g.
 
 ```python
 import logging
-from django_discordo import ACTION_LOG_LEVEL, SUCCESS_LOG_LEVEL, VERBOSE_LOG_LEVEL
-
-# Custom log levels are automatically registered when you import django_discordo
 
 LOGGING = {
     "version": 1,
@@ -71,7 +78,7 @@ LOGGING = {
     "handlers": {
         "discord": {
             "class": "django_discordo.DiscordWebhookHandler",
-            "level": "WARNING",  # Adjust as needed
+            "level": "WARNING",
         },
     },
     "root": {
@@ -98,16 +105,17 @@ from django_discordo import VERBOSE_LOG_LEVEL, SUCCESS_LOG_LEVEL, ACTION_LOG_LEV
 logger = logging.getLogger(__name__)
 
 # Using custom log levels
-logger.log(VERBOSE_LOG_LEVEL, "Detailed operation info")
-logger.log(SUCCESS_LOG_LEVEL, "User registration completed successfully")
-logger.log(ACTION_LOG_LEVEL, "Admin user modified critical settings")
+logger.log(VERBOSE_LOG_LEVEL, "Student has submitted the problem set.")
+logger.log(SUCCESS_LOG_LEVEL, "Student has found new diamond.")
+logger.log(ACTION_LOG_LEVEL, "Student has updated a link in ARCH, please check it.")
 ```
 
 ## Advanced Configuration
 
 ### Filtering Logs
 
-You can add filters to prevent certain logs from being sent to Discord:
+You can add filters to prevent certain logs from being sent to Discord;
+e.g. OTIS-WEB filters out certain 404 errors
 
 ```python
 def filter_useless_404(record):
@@ -131,19 +139,6 @@ LOGGING = {
     },
 }
 ```
-
-### Level-Specific Webhooks
-
-You can route different log levels to different Discord channels by setting level-specific webhook URLs:
-
-```bash
-WEBHOOK_URL_CRITICAL=https://discord.com/api/webhooks/CRITICAL_CHANNEL
-WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/ERROR_CHANNEL
-WEBHOOK_URL_WARNING=https://discord.com/api/webhooks/WARNING_CHANNEL
-WEBHOOK_URL=https://discord.com/api/webhooks/DEFAULT_CHANNEL
-```
-
-The handler will check for `WEBHOOK_URL_{LEVELNAME}` first, then fall back to `WEBHOOK_URL`.
 
 ## Testing Mode
 
