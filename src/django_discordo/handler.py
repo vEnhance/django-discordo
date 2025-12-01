@@ -1,7 +1,6 @@
 import logging
 import os
 import pprint
-import socket
 from collections import OrderedDict
 from typing import Any, Optional, TypedDict
 
@@ -45,7 +44,6 @@ def truncate(s: str, n: int = 800) -> str:
 
 
 class Payload(TypedDict):
-    username: str
     embeds: list[dict[str, Any]]
 
 
@@ -158,7 +156,6 @@ class DiscordWebhookHandler(logging.Handler):
             embed["description"] = desc
 
         data: Payload = {
-            "username": socket.gethostname(),
             "embeds": [embed],
         }
         return data
