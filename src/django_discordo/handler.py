@@ -130,7 +130,7 @@ class DiscordWebhookHandler(logging.Handler):
                 # redact the token for evan's personal api
                 d: dict[str, Any] = {}
                 for k, v in request.POST.items():
-                    if k == "token" or k == "password":
+                    if "token" in k.lower() or "password" in k.lower():
                         d[k] = "<redacted>"
                     else:
                         d[k] = v
