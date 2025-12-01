@@ -54,4 +54,4 @@ Issues = "https://github.com/vEnhance/django-discordo/issues"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
-pythonpath = ["src"]
+pythonpath = ["src", "."]
