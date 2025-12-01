@@ -42,6 +42,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "prek>=0.2.19",
     "pytest>=8.0",
     "pytest-django>=4.5",
 ]
