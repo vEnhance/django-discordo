@@ -114,7 +114,9 @@ class DiscordWebhookHandler(logging.Handler):
         if record.exc_text is not None:
             # always truncate r.exc_text to at most 600 chars since it's fking long
             msg_key = ":yellow_heart: EXCEPTION :yellow_heart:"
-            description_parts[msg_key] = truncate(record.exc_text)
+            description_parts[msg_key] = (
+                "```" + "\n" + truncate(record.exc_text) + "\n" + "```"
+            )
 
         # if request data is there, include that too
         if hasattr(record, "request"):
