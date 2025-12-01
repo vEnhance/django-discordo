@@ -40,7 +40,17 @@ dependencies = [
     "requests>=2.25.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.5",
+]
+
 [project.urls]
 Homepage = "https://github.com/vEnhance/django-discordo"
 Repository = "https://github.com/vEnhance/django-discordo"
 Issues = "https://github.com/vEnhance/django-discordo/issues"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["src"]
