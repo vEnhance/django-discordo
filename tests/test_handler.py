@@ -15,6 +15,13 @@ from django_discordo.handler import (
     truncate,
 )
 
+try:
+    import django  # noqa: F401
+
+    DJANGO_AVAILABLE = True
+except ImportError:
+    DJANGO_AVAILABLE = False
+
 
 def test_short_log():
     handler = DiscordWebhookHandler()
@@ -232,6 +239,7 @@ class TestGetUrl:
                     lambda self: (_ for _ in ()).throw(AttributeError())
                 )
 
+    @pytest.mark.skipif(not DJANGO_AVAILABLE, reason="Django not installed")
     def test_simple_string_url(self):
         handler = DiscordWebhookHandler()
         record = make_record()
@@ -241,6 +249,7 @@ class TestGetUrl:
             url = handler.get_url(record)
             assert url == "https://discord.com/webhook/123"
 
+    @pytest.mark.skipif(not DJANGO_AVAILABLE, reason="Django not installed")
     def test_dict_url_with_level(self):
         handler = DiscordWebhookHandler()
         record = make_record(level=logging.ERROR)
@@ -252,6 +261,7 @@ class TestGetUrl:
             url = handler.get_url(record)
             assert url == "https://discord.com/webhook/errors"
 
+    @pytest.mark.skipif(not DJANGO_AVAILABLE, reason="Django not installed")
     def test_dict_url_fallback_to_default(self):
         handler = DiscordWebhookHandler()
         record = make_record(level=logging.INFO)
@@ -268,10 +278,8 @@ class TestGetUrl:
         record = make_record()
         env = {"DISCORD_WEBHOOK_URL": "https://discord.com/webhook/env"}
         with patch.dict(os.environ, env, clear=True):
-            with patch("django.conf.settings", spec=[]):
-                # spec=[] means no attributes, so hasattr returns False
-                url = handler.get_url(record)
-                assert url == "https://discord.com/webhook/env"
+            url = handler.get_url(record)
+            assert url == "https://discord.com/webhook/env"
 
     def test_env_var_level_specific(self):
         handler = DiscordWebhookHandler()
@@ -281,9 +289,8 @@ class TestGetUrl:
             "DISCORD_WEBHOOK_URL_ERROR": "https://discord.com/webhook/errors",
         }
         with patch.dict(os.environ, env, clear=True):
-            with patch("django.conf.settings", spec=[]):
-                url = handler.get_url(record)
-                assert url == "https://discord.com/webhook/errors"
+            url = handler.get_url(record)
+            assert url == "https://discord.com/webhook/errors"
 
 
 class TestPostResponse:

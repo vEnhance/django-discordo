@@ -1,9 +1,14 @@
-import django
-from django.conf import settings
+try:
+    import django
+    from django.conf import settings
+
+    DJANGO_AVAILABLE = True
+except ImportError:
+    DJANGO_AVAILABLE = False
 
 
 def pytest_configure():
-    if not settings.configured:
+    if DJANGO_AVAILABLE and not settings.configured:
         settings.configure(
             DEBUG=True,
             DATABASES={},
