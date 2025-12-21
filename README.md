@@ -20,6 +20,10 @@ For example, if using `uv`:
 uv add django-discordo
 ```
 
+Contrary to the name, Django is actually an optional dependency.
+This can also be used for logging in non-Django applications,
+and in that case Django-specific functionality is turned off.
+
 ## Configuration
 
 ### 1. Create a Discord Webhook
@@ -32,7 +36,7 @@ uv add django-discordo
 
 There are two possible ways to do this (first one takes precedence):
 
-#### Use settings.py
+#### Use settings.py (for Django applications)
 
 Add your webhook URL to your Django `settings.py`:
 
@@ -55,8 +59,8 @@ if your source code is public.)
 
 #### Using environment variables directly
 
-If the URL's are not configured in `settings.py` then `django-discordo` will
-check environment variables instead:
+If the URLs are not configured in `settings.py` (or Django is not present at
+all) then `django-discordo` will check environment variables instead:
 
 ```bash
 # In your .env file
@@ -65,7 +69,7 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 DISCORD_WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/YOUR_ERROR_WEBHOOK_URL
 ```
 
-### 3. Update Django Settings
+### 3. Update Django Settings (for Django applications)
 
 Add the Discord handler to your Django `settings.py`, e.g.
 
