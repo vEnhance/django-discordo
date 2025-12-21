@@ -1,6 +1,6 @@
 # django-discordo
 
-A janky Discord webhook handler for Django logging
+A janky Discord webhook handler
 originally written for [OTIS-WEB](https://github.com/vEnhance/otis-web).
 
 ## Features, apparently
@@ -20,9 +20,9 @@ For example, if using `uv`:
 uv add django-discordo
 ```
 
-Contrary to the name, Django is actually an optional dependency.
-This can also be used for logging in non-Django applications,
-and in that case Django-specific functionality is turned off.
+Contrary to the name, **Django is actually an optional dependency**.
+This can also be used for logging in non-Django applications;
+in that case Django-specific functionality is turned off.
 
 ## Configuration
 
