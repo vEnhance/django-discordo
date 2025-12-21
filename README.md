@@ -69,9 +69,9 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 DISCORD_WEBHOOK_URL_ERROR=https://discord.com/api/webhooks/YOUR_ERROR_WEBHOOK_URL
 ```
 
-### 3. Update Django Settings (for Django applications)
+### 3. Using the handler
 
-Add the Discord handler to your Django `settings.py`, e.g.
+In Django, add the Discord handler to your Django `settings.py`, e.g.
 
 ```python
 import logging
@@ -90,6 +90,16 @@ LOGGING = {
         "level": "INFO",
     },
 }
+```
+
+Otherwise, import the webhook handler directly, say:
+
+```python
+from django_discordo import DiscordWebhookHandler
+logger = logging.getLogger("root")
+logger.setLevel(logging.INFO)
+logger.addHandler(DiscordWebhookHandler())
+logger.addHandler(logging.StreamHandler())
 ```
 
 ## Custom Log Levels
