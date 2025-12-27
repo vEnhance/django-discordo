@@ -32,4 +32,4 @@ jobs:
         run: uv run prek --all-files
 
       - name: 🧪 Run tests
-        run: uv run pytest
+        run: uv run prek --all-files --hook-stage pre-push
