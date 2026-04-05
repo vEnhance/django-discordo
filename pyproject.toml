@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Discord webhook handler for Django logging"
 repository = "https://github.com/vEnhance/django-discordo"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Evan Chen", email = "evan@evanchen.cc" }
 ]
