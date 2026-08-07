@@ -65,6 +65,18 @@ class DiscordWebhookHandler(logging.Handler):
         else:
             s = "None"
 
+        dirname, filename = os.path.split(record.pathname)
+        lastdirname = os.path.basename(dirname)
+
+        resolver_match = getattr(
+            getattr(record, "request", None), "resolver_match", None
+        )
+        module = (
+            getattr(resolver_match, "_func_path", None)
+            or getattr(resolver_match, "view_name", None)
+            or record.module
+        )
+
         fields = [
             {
                 "name": "Status",
@@ -83,7 +95,7 @@ class DiscordWebhookHandler(logging.Handler):
             },
             {
                 "name": "Module",
-                "value": f"`{record.module}`",
+                "value": f"`{module}`",
                 "inline": True,
             },
             {
@@ -93,7 +105,7 @@ class DiscordWebhookHandler(logging.Handler):
             },
             {
                 "name": "Filename",
-                "value": f"{record.lineno}:`{record.filename}`",
+                "value": f"{record.lineno}:`{os.path.join(lastdirname, filename)}`",
                 "inline": True,
             },
         ]

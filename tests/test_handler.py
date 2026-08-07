@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -209,6 +210,48 @@ class TestPayloadStructure:
         embed = payload["embeds"][0]
         field_names = {f["name"] for f in embed["fields"]}
         assert field_names == {"Status", "Level", "Scope", "Module", "User", "Filename"}
+
+    @pytest.mark.parametrize(
+        "pathname,expected",
+        [
+            ("/home/user/project/app/views.py", "app/views.py"),
+            ("app/views.py", "app/views.py"),
+            ("views.py", "views.py"),
+            ("/views.py", "views.py"),
+        ],
+    )
+    def test_filename_includes_last_directory(self, pathname, expected):
+        handler = DiscordWebhookHandler()
+        factory = logging.getLogRecordFactory()
+        record = factory(__name__, logging.WARNING, pathname, 42, "msg", (), None)
+        payload = handler.get_payload(record)
+        embed = payload["embeds"][0]
+        field = next(f for f in embed["fields"] if f["name"] == "Filename")
+        assert field["value"] == f"42:`{expected}`"
+
+    def test_module_falls_back_to_record_module(self):
+        handler = DiscordWebhookHandler()
+        payload = handler.get_payload(make_record())
+        field = next(f for f in payload["embeds"][0]["fields"] if f["name"] == "Module")
+        assert field["value"] == "`test_file`"
+
+    @pytest.mark.parametrize(
+        "match,expected",
+        [
+            (SimpleNamespace(_func_path="app.views.Detail"), "`app.views.Detail`"),
+            (SimpleNamespace(_func_path="", view_name="detail"), "`detail`"),
+            (SimpleNamespace(), "`test_file`"),
+            (None, "`test_file`"),
+        ],
+    )
+    def test_module_uses_resolved_view(self, match, expected):
+        handler = DiscordWebhookHandler()
+        request = MagicMock()
+        request.resolver_match = match
+        record = make_record(request=request)
+        payload = handler.get_payload(record)
+        field = next(f for f in payload["embeds"][0]["fields"] if f["name"] == "Module")
+        assert field["value"] == expected
 
     def test_long_message_truncated_in_title(self):
         handler = DiscordWebhookHandler()
