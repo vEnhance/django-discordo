@@ -265,22 +265,21 @@ class TestPayloadStructure:
 
 class TestGetUrl:
     def test_no_url_configured(self):
-        with patch.dict(os.environ, {}, clear=True):
-            with patch(
-                "django_discordo.handler.settings", create=True
-            ) as mock_settings:
-                del mock_settings.DISCORD_WEBHOOK_URL
-                del mock_settings.DISCORD_WEBHOOK_URLS
-                # get_url will try to access settings attributes
-                mock_settings.configure_mock(
-                    **{"DISCORD_WEBHOOK_URL": None, "DISCORD_WEBHOOK_URLS": None}
-                )
-                type(mock_settings).DISCORD_WEBHOOK_URL = property(
-                    lambda self: (_ for _ in ()).throw(AttributeError())
-                )
-                type(mock_settings).DISCORD_WEBHOOK_URLS = property(
-                    lambda self: (_ for _ in ()).throw(AttributeError())
-                )
+        with patch.dict(os.environ, {}, clear=True), patch(
+            "django_discordo.handler.settings", create=True
+        ) as mock_settings:
+            del mock_settings.DISCORD_WEBHOOK_URL
+            del mock_settings.DISCORD_WEBHOOK_URLS
+            # get_url will try to access settings attributes
+            mock_settings.configure_mock(
+                DISCORD_WEBHOOK_URL=None, DISCORD_WEBHOOK_URLS=None
+            )
+            type(mock_settings).DISCORD_WEBHOOK_URL = property(
+                lambda self: (_ for _ in ()).throw(AttributeError())
+            )
+            type(mock_settings).DISCORD_WEBHOOK_URLS = property(
+                lambda self: (_ for _ in ()).throw(AttributeError())
+            )
 
     @pytest.mark.skipif(not DJANGO_AVAILABLE, reason="Django not installed")
     def test_simple_string_url(self):
@@ -347,12 +346,13 @@ class TestPostResponse:
     def test_posts_to_url(self):
         handler = DiscordWebhookHandler()
         record = make_record()
-        with patch.object(handler, "get_url", return_value="https://example.com"):
-            with patch("django_discordo.handler.requests.post") as mock_post:
-                mock_post.return_value = MagicMock(status_code=200)
-                result = handler.post_response(record)
-                assert result is not None
-                mock_post.assert_called_once()
+        with patch.object(
+            handler, "get_url", return_value="https://example.com"
+        ), patch("django_discordo.handler.requests.post") as mock_post:
+            mock_post.return_value = MagicMock(status_code=200)
+            result = handler.post_response(record)
+            assert result is not None
+            mock_post.assert_called_once()
 
 
 class TestCustomLogLevels:

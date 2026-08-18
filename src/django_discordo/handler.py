@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import logging
 import os
 import pprint
 from collections import OrderedDict
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import requests
 
@@ -132,7 +134,7 @@ class DiscordWebhookHandler(logging.Handler):
 
         # if request data is there, include that too
         if hasattr(record, "request"):
-            request = getattr(record, "request")
+            request = record.request
             s = ""
             s += f"> **Method** {request.method}\n"
             s += f"> **Path** `{request.path}`\n"
@@ -174,7 +176,7 @@ class DiscordWebhookHandler(logging.Handler):
         }
         return data
 
-    def get_url(self, record: logging.LogRecord) -> Optional[str]:
+    def get_url(self, record: logging.LogRecord) -> str | None:
         """Get webhook URL from Django settings or environment variables.
 
         Checks in this order:
@@ -210,7 +212,7 @@ class DiscordWebhookHandler(logging.Handler):
             os.getenv("DISCORD_WEBHOOK_URL"),
         )
 
-    def post_response(self, record: logging.LogRecord) -> Optional[requests.Response]:
+    def post_response(self, record: logging.LogRecord) -> requests.Response | None:
         data = self.get_payload(record)
         url = self.get_url(record)
         if url is not None:

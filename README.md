@@ -96,6 +96,7 @@ Otherwise, import the webhook handler directly, say:
 
 ```python
 from django_discordo import DiscordWebhookHandler
+
 logger = logging.getLogger("root")
 logger.setLevel(logging.INFO)
 logger.addHandler(DiscordWebhookHandler())
@@ -136,6 +137,7 @@ def filter_useless_404(record):
     if record.args and len(record.args) >= 2:
         return "wp-include" not in str(record.args[1])
     return True
+
 
 LOGGING = {
     "filters": {
