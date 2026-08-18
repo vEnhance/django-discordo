@@ -16,8 +16,6 @@ keywords = ["django", "discord", "logging", "webhook", "handler"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: Django",
-    "Framework :: Django :: 3.2",
-    "Framework :: Django :: 4.0",
     "Framework :: Django :: 4.1",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
@@ -26,27 +24,26 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Logging",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
     "requests>=2.25.0",
 ]
 
 [project.optional-dependencies]
 django = [
-    "django>=3.2",
+    "django>=4.1",
 ]
 
 [dependency-groups]
 dev = [
-    "django>=3.2",
+    "django>=4.1",
     "prek>=0.2.19",
     "pytest>=8.0",
     "pytest-django>=4.5",
