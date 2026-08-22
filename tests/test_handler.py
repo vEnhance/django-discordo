@@ -1,14 +1,18 @@
 import logging
 import os
 import sys
+import threading
+import time
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from django_discordo.handler import (
     ACTION_LOG_LEVEL,
     COLORS,
+    DEFAULT_TIMEOUT,
     EMOJIS,
     SUCCESS_LOG_LEVEL,
     VERBOSE_LOG_LEVEL,
@@ -316,6 +320,23 @@ class TestGetUrl:
             url = handler.get_url(record)
             assert url == "https://discord.com/webhook/default"
 
+    @pytest.mark.skipif(not DJANGO_AVAILABLE, reason="Django not installed")
+    def test_unconfigured_django_falls_back_to_env(self):
+        """Django installed but not set up must not break logging."""
+        from django.core.exceptions import ImproperlyConfigured
+
+        handler = DiscordWebhookHandler()
+        record = make_record()
+        env = {"DISCORD_WEBHOOK_URL": "https://discord.com/webhook/env"}
+        with (
+            patch.dict(os.environ, env, clear=True),
+            patch("django.conf.settings") as mock_settings,
+        ):
+            type(mock_settings).DISCORD_WEBHOOK_URLS = property(
+                lambda self: (_ for _ in ()).throw(ImproperlyConfigured("nope"))
+            )
+            assert handler.get_url(record) == "https://discord.com/webhook/env"
+
     def test_env_var_fallback(self):
         handler = DiscordWebhookHandler()
         record = make_record()
@@ -355,6 +376,132 @@ class TestPostResponse:
             result = handler.post_response(record)
             assert result is not None
             mock_post.assert_called_once()
+
+
+class TestNonBlockingDelivery:
+    """The webhook post must never block, hang, or raise into caller code."""
+
+    def make_handler(self, **kwargs):
+        kwargs.setdefault("shutdown_timeout", 2.0)
+        handler = DiscordWebhookHandler(**kwargs)
+        handler.get_url = lambda record: "https://example.invalid/webhook"  # type: ignore[method-assign]
+        return handler
+
+    def test_emit_returns_while_post_is_stuck(self):
+        handler = self.make_handler(shutdown_timeout=0.1)
+        stuck = threading.Event()
+        posted = threading.Event()
+
+        def hang(*args, **kwargs):
+            posted.set()
+            stuck.wait(30)
+
+        handler._post = hang  # type: ignore[method-assign]
+        try:
+            start = time.monotonic()
+            handler.emit(make_record())
+            elapsed = time.monotonic() - start
+            assert elapsed < 0.5, f"emit() blocked for {elapsed:.2f}s"
+            assert posted.wait(5), "worker never attempted the post"
+        finally:
+            stuck.set()
+            handler.close()
+
+    def test_emit_does_not_raise_when_post_fails(self):
+        handler = self.make_handler(blocking=True)
+        handler._post = MagicMock(side_effect=requests.ConnectionError("boom"))  # type: ignore[method-assign]
+        logger = logging.getLogger("discordo-test-raises")
+        logger.propagate = False
+        logger.addHandler(handler)
+        try:
+            with patch.object(logging, "raiseExceptions", False):
+                logger.warning("this must not blow up")  # would raise before
+            handler._post.assert_called_once()
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
+
+    def test_payload_built_on_calling_thread(self):
+        """record.request is only valid on the emitting thread."""
+        handler = self.make_handler()
+        seen = {}
+        original = handler.get_payload
+
+        def spy(record):
+            seen["thread"] = threading.current_thread()
+            return original(record)
+
+        handler.get_payload = spy  # type: ignore[method-assign]
+        handler._post = MagicMock()  # type: ignore[method-assign]
+        try:
+            handler.emit(make_record())
+            assert seen["thread"] is threading.current_thread()
+        finally:
+            handler.close()
+
+    def test_timeout_is_passed_to_requests(self):
+        handler = self.make_handler()
+        with patch("django_discordo.handler.requests.post") as mock_post:
+            handler._post("https://example.invalid", {"embeds": []})
+        assert mock_post.call_args.kwargs["timeout"] == DEFAULT_TIMEOUT
+
+    def test_close_flushes_pending_records(self):
+        handler = self.make_handler()
+        handler._post = MagicMock()  # type: ignore[method-assign]
+        for i in range(20):
+            handler.emit(make_record(msg=f"message {i}"))
+        handler.close()
+        assert handler._post.call_count == 20
+
+    def test_full_queue_drops_instead_of_blocking(self):
+        handler = self.make_handler(queue_size=1, shutdown_timeout=0.1)
+        stuck = threading.Event()
+        handler._post = lambda *a, **kw: stuck.wait(30)  # type: ignore[method-assign]
+        try:
+            start = time.monotonic()
+            for i in range(50):
+                handler.emit(make_record(msg=f"flood {i}"))
+            elapsed = time.monotonic() - start
+            assert elapsed < 1.0, f"emit() blocked for {elapsed:.2f}s under flood"
+            assert handler.dropped > 0
+        finally:
+            stuck.set()
+            handler.close()
+
+    def test_blocking_mode_posts_inline(self):
+        handler = self.make_handler(blocking=True)
+        handler._post = MagicMock()  # type: ignore[method-assign]
+        handler.emit(make_record())
+        handler._post.assert_called_once()  # already sent, no flush needed
+        assert handler._thread is None
+        handler.close()
+
+    def test_worker_restarts_after_fork(self):
+        handler = self.make_handler()
+        handler._post = MagicMock()  # type: ignore[method-assign]
+        try:
+            handler.emit(make_record())
+            first = handler._thread
+            assert first is not None
+            handler._pid = -1  # pretend we were forked into a new process
+            handler.emit(make_record())
+            assert handler._thread is not first
+        finally:
+            handler.close()
+
+    def test_records_from_worker_thread_are_dropped(self):
+        """urllib3 logs during the post; that must not feed back into a post."""
+        handler = self.make_handler()
+        handler._post = MagicMock()  # type: ignore[method-assign]
+        handler._thread = threading.current_thread()
+        handler.emit(make_record())
+        handler._post.assert_not_called()
+
+    def test_no_url_configured_never_starts_a_thread(self):
+        handler = DiscordWebhookHandler()
+        with patch.object(handler, "get_url", return_value=None):
+            handler.emit(make_record())
+        assert handler._thread is None
 
 
 class TestCustomLogLevels:

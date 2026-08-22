@@ -2,7 +2,7 @@
 django-discordo: Discord webhook handler for Django logging
 """
 
-__version__ = "0.1.0"
+__version__ = "1.2.0"
 
 from .handler import ACTION_LOG_LEVEL as _ACTION_LOG_LEVEL
 from .handler import SUCCESS_LOG_LEVEL as _SUCCESS_LOG_LEVEL

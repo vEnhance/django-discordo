@@ -103,6 +103,29 @@ logger.addHandler(DiscordWebhookHandler())
 logger.addHandler(logging.StreamHandler())
 ```
 
+## Delivery is non-blocking
+
+Since v1.2, the HTTP request to Discord happens on a background worker thread,
+so e.g. a Discord outage doesn't cause everything to burn.
+
+You can tune this with handler options:
+
+```python
+LOGGING = {
+    "handlers": {
+        "discord": {
+            "class": "django_discordo.DiscordWebhookHandler",
+            "level": "WARNING",
+            # all of the below are optional; defaults shown
+            "blocking": False,  # True = post inline, the pre-1.2 behavior
+            "timeout": (3.05, 10),  # (connect, read) seconds, or a single float
+            "queue_size": 1000,  # max records waiting to be sent
+            "shutdown_timeout": 5.0,  # seconds to wait for delivery at exit
+        },
+    },
+}
+```
+
 ## Custom Log Levels
 
 django-discordo provides three custom log levels in addition to Django's standard levels:
@@ -178,7 +201,10 @@ When a log record is emitted:
 2. Extracts metadata (user, module, filename, line number, status code)
 3. Includes Django request details (method, path, user agent, POST data)
 4. Redacts sensitive fields (passwords, tokens)
-5. Sends a beautifully formatted embed to Discord via webhook
+5. Hands the finished embed to a background thread, which posts it to the webhook
+
+Steps 1–4 run on the thread that logged, because the request object is only
+valid there; only the network call in step 5 is deferred.
 
 ## Discord Embed Format
 
