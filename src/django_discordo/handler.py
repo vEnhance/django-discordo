@@ -179,10 +179,16 @@ class DiscordWebhookHandler(logging.Handler):
             s += f"> **Agent** {request.headers.get('User-Agent', 'Unknown')}\n"
             if request.user.is_authenticated:
                 s += f"> **User** {getattr(request.user, 'username', 'wtf')}\n"
-            if request.method == "POST":
+            try:
+                post, files = request.POST, request.FILES
+            except Exception as e:  # noqa: BLE001
+                s += f"> **Body** unreadable ({type(e).__name__}: {e})\n"
+                post, files = None, None
+
+            if post is not None and request.method == "POST":
                 # redact the token for evan's personal api
                 d: dict[str, Any] = {}
-                for k, v in request.POST.items():
+                for k, v in post.items():
                     if "token" in k.lower() or "password" in k.lower():
                         d[k] = "<redacted>"
                     else:
@@ -192,9 +198,9 @@ class DiscordWebhookHandler(logging.Handler):
                 pp = pprint.PrettyPrinter(indent=2)
                 s += pp.pformat(d)
                 s += r"```"
-            if request.FILES is not None and len(request.FILES) > 0:
+            if files:
                 s += "Files included\n"
-                for name, fileobj in request.FILES.items():
+                for name, fileobj in files.items():
                     s += f"> `{name}` ({fileobj.size} bytes, {fileobj.content_type})\n"
 
             chars_remaining = 1800 - sum(len(v) for v in description_parts.values())

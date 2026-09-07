@@ -267,6 +267,60 @@ class TestPayloadStructure:
         assert len(embed["title"]) < 250
 
 
+class FakeRequest:
+    def __init__(self, *, post=None, files=None, error=None):
+        self.method = "POST"
+        self.path = "/some/path/"
+        self.content_type = "multipart/form-data"
+        self.headers = {"User-Agent": "curl/8.0"}
+        self.user = SimpleNamespace(is_authenticated=False)
+        self.resolver_match = None
+        self._post = post if post is not None else {}
+        self._files = files if files is not None else {}
+        self._error = error
+
+    @property
+    def POST(self):
+        if self._error is not None:
+            raise self._error
+        return self._post
+
+    @property
+    def FILES(self):
+        if self._error is not None:
+            raise self._error
+        return self._files
+
+
+class TestRequestBody:
+    def _description(self, request):
+        handler = DiscordWebhookHandler()
+        record = make_record(msg="line one\nline two", request=request)
+        return handler.get_payload(record)["embeds"][0]["description"]
+
+    def test_post_data_included_and_redacted(self):
+        request = FakeRequest(post={"name": "evan", "api_token": "hunter2"})
+        desc = self._description(request)
+        assert "evan" in desc
+        assert "hunter2" not in desc
+        assert "<redacted>" in desc
+
+    def test_unreadable_body_does_not_raise(self):
+        request = FakeRequest(
+            error=ValueError("Request max total header size exceeded")
+        )
+        desc = self._description(request)
+        assert "unreadable" in desc
+        assert "ValueError" in desc
+
+    def test_files_listed(self):
+        fileobj = SimpleNamespace(size=1234, content_type="image/png")
+        request = FakeRequest(files={"upload": fileobj})
+        desc = self._description(request)
+        assert "upload" in desc
+        assert "1234 bytes" in desc
+
+
 class TestGetUrl:
     def test_no_url_configured(self):
         with (
