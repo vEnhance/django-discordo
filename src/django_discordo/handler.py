@@ -48,6 +48,9 @@ def truncate(s: str, n: int = 800) -> str:
     return s
 
 
+MAX_TITLE_LENGTH = 200
+
+
 class Payload(TypedDict):
     embeds: list[dict[str, Any]]
 
@@ -151,15 +154,17 @@ class DiscordWebhookHandler(logging.Handler):
 
         description_parts = OrderedDict()
 
-        # if the message is short (< 1 line), we set it as the title
-        if "\n" not in record.message:
-            title = f"{emoji} {record.message[:200]}"
+        # if the message is short, we set it as the title
+        first_line, _, rest = record.message.partition("\n")
+        if len(first_line) > MAX_TITLE_LENGTH:
+            title = f"{emoji} {first_line[: MAX_TITLE_LENGTH - 3]}..."
+            rest = record.message
         # otherwise, set the first line as title and include the rest in description
         else:
-            i = record.message.index("\n")
-            title = f"{emoji} {record.message[:i]}"
+            title = f"{emoji} {first_line}"
+        if rest:
             msg_key = ":green_heart: MESSAGE :green_heart:"
-            description_parts[msg_key] = truncate(record.message[i + 1 :])
+            description_parts[msg_key] = truncate(rest)
 
         # if exc_text nonempty, add that to description
         if record.exc_text is not None:

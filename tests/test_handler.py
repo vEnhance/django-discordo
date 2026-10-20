@@ -265,6 +265,27 @@ class TestPayloadStructure:
         embed = payload["embeds"][0]
         # Title should be truncated to 200 chars + emoji
         assert len(embed["title"]) < 250
+        assert embed["title"].endswith("...")
+        assert long_msg in embed["description"]
+
+    def test_long_first_line_kept_in_description(self):
+        handler = DiscordWebhookHandler()
+        first_line = "a" * 250 + "TAIL"
+        record = make_record(msg=f"{first_line}\nsecond line")
+        payload = handler.get_payload(record)
+        embed = payload["embeds"][0]
+        assert len(embed["title"]) < 250
+        assert "TAIL" not in embed["title"]
+        assert f"{first_line}\nsecond line" in embed["description"]
+
+    def test_title_exactly_at_limit_not_truncated(self):
+        handler = DiscordWebhookHandler()
+        msg = "y" * 200
+        record = make_record(msg=msg)
+        payload = handler.get_payload(record)
+        embed = payload["embeds"][0]
+        assert embed["title"].endswith(msg)
+        assert "description" not in embed
 
 
 class FakeRequest:
